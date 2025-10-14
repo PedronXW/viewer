@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py[cod]
+*.pdb
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.log
+
+data/
+
+# Virtual environment
+.venv/
+
+# VS Code
+.vscode/
+
+# Docker
+*.dockerignore
+
+# Datasets
+datasets/train/
+datasets/test/
+datasets/val/
