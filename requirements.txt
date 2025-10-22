@@ -13,3 +13,4 @@ filterpy==1.4.5
 scikit-image==0.22.0
 matplotlib==3.8.2
 PyYAML==6.0.2
+git+https://github.com/ifzhang/ByteTrack.git
