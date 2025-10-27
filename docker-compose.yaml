@@ -21,7 +21,6 @@ services:
       - minio
       - localstack
     restart: unless-stopped
-
   db:
     image: postgres:16
     container_name: postgres_db
@@ -61,4 +60,5 @@ services:
       - DEFAULT_REGION=us-east-1
     volumes:
       - ./data/localstack:/data/localstack
+
     restart: unless-stopped
