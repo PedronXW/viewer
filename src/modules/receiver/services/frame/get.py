@@ -1,11 +1,11 @@
-from src.modules.receiver.domain.ports.repository.frame import \
+from modules.receiver.domain.ports.repository.frame import \
     FrameRepositoryAbstract
-from src.modules.receiver.domain.ports.storage import StorageAbstractClass
+from modules.receiver.domain.ports.storage import StorageRepositoryAbstract
 
 
 class GetFrameService:
     def __init__(self, frame_repository: FrameRepositoryAbstract,
-                 storage_port: StorageAbstractClass):
+                 storage_port: StorageRepositoryAbstract):
         self.frame_repository = frame_repository
         self.storage_port = storage_port
 

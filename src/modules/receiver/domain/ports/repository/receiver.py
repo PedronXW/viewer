@@ -18,7 +18,7 @@ class ReceiverRepositoryAbstract(ABC):
         ...
 
     @abstractmethod
-    def create(self, name: str, url: str) -> Receiver:
+    def create(self, props: Receiver) -> Receiver:
         ...
 
     @abstractmethod

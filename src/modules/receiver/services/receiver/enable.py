@@ -3,7 +3,7 @@ from modules.receiver.domain.ports.repository.receiver import \
 from modules.receiver.domain.receiver import Receiver
 
 
-class StartReceiverService:
+class EnableReceiverService:
     def __init__(self, receiver_repository: ReceiverRepositoryAbstract, manager):
         self.receiver_repository = receiver_repository
         self.manager = manager
@@ -12,5 +12,7 @@ class StartReceiverService:
         receiver = self.receiver_repository.get_by_id(receiver_id)
         if not receiver:
             return None
-        started = self.manager.start_receiver(Receiver(receiver))
-        return started
+        receiver.enabled = True
+        self.receiver_repository.update(receiver)
+        self.manager.start_receiver(Receiver(receiver))
+        return receiver

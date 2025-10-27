@@ -1,9 +1,8 @@
 import socket
 import threading
 
-from modules.receiver.services.receiver.receiver_consumer import \
-    ReceiverConsumer
-from modules.receiver.services.receiver.receiver_watcher import ReceiverWatcher
+from modules.receiver.domain.consumer import ReceiverConsumer
+from modules.receiver.domain.watcher import ReceiverWatcher
 
 
 class ReceiverManager:

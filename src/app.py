@@ -1,15 +1,31 @@
 import threading
 import time
-import uuid
 
 from flask import Flask, jsonify, request
 
-from modules.receiver.domain.receiver import Receiver
+from modules.receiver.domain.manager import ReceiverManager
+from modules.receiver.infra.adapters.http.receiver.create import \
+    CreateReceiverController
+from modules.receiver.infra.adapters.http.receiver.disable import \
+    DisableReceiverController
+from modules.receiver.infra.adapters.http.receiver.enable import \
+    EnableReceiverController
+from modules.receiver.infra.adapters.http.receiver.list import \
+    ListReceiversController
+from modules.receiver.infra.adapters.http.receiver.start import \
+    StartReceiverController
+from modules.receiver.infra.adapters.http.receiver.stop import \
+    StopReceiverController
 from modules.receiver.infra.ports.queues.client import queue_url, sqs
 from modules.receiver.infra.ports.repositories.database import db
-from modules.receiver.infra.ports.repositories.receiver.repository import (
-    ReceiverModel, ReceiverRepository)
-from modules.receiver.services.receiver.receiver_manager import ReceiverManager
+from modules.receiver.infra.ports.repositories.receiver.repository import \
+    ReceiverRepository
+from modules.receiver.services.receiver.create import CreateReceiverService
+from modules.receiver.services.receiver.disable import DisableReceiverService
+from modules.receiver.services.receiver.enable import EnableReceiverService
+from modules.receiver.services.receiver.list import ListReceiversService
+from modules.receiver.services.receiver.start import StartReceiverService
+from modules.receiver.services.receiver.stop import StopReceiverService
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://user:password@db:5432/mydatabase"
@@ -19,81 +35,65 @@ db.init_app(app)
 
 with app.app_context():
     db.create_all()
-
-# repository + manager
 repository = ReceiverRepository()
 manager = ReceiverManager(app, repository)
-# start enabled receivers at startup
 manager.start_enabled_receivers()
 
-# controllers (endpoints)
+
+create_service = CreateReceiverService(repository)
+list_service = ListReceiversService(repository)
+enable_service = EnableReceiverService(repository, manager)
+disable_service = DisableReceiverService(repository, manager)
+start_service = StartReceiverService(repository, manager)
+stop_service = StopReceiverService(repository, manager)
+
+create_controller = CreateReceiverController(create_service)
+list_controller = ListReceiversController(list_service)
+enable_controller = EnableReceiverController(enable_service)
+disable_controller = DisableReceiverController(disable_service)
+start_controller = StartReceiverController(start_service)
+stop_controller = StopReceiverController(stop_service)
+
 @app.route("/receivers", methods=["GET"])
 def list_receivers():
-    rows = ReceiverModel.query.all()
-    def row_to_dict(r):
-        return {
-            "id": r.id,
-            "name": r.name,
-            "url": r.url,
-            "enabled": r.enabled,
-            "is_running": r.is_running,
-            "owner_id": r.owner_id,
-            "last_started_at": r.last_started_at.isoformat() if r.last_started_at else None,
-            "last_heartbeat": r.last_heartbeat.isoformat() if r.last_heartbeat else None,
-            "created_at": r.created_at.isoformat() if r.created_at else None,
-            "updated_at": r.updated_at.isoformat() if r.updated_at else None,
-        }
-    return jsonify([row_to_dict(r) for r in rows])
+    result = list_controller.handle({})
+    return jsonify(result)
 
 @app.route("/receivers", methods=["POST"])
 def create_receiver():
     data = request.json or {}
-    url = data.get("url")
-    name = data.get("name")
-    if not url:
-        return jsonify({"error": "url required"}), 400
-    r = ReceiverModel(id=str(uuid.uuid4()), name=name, url=url, enabled=True)
-    db.session.add(r)
-    db.session.commit()
-    # auto-start
-    
-    domain_r = Receiver(r)
-    manager.start_receiver(domain_r)
-    return jsonify({"id": r.id}), 201
+    create_controller.handle(data)
+    return jsonify({"status": "created"}), 201
 
-@app.route("/receivers/<int:receiver_id>/enable", methods=["POST"])
-def enable_receiver(receiver_id):
-    r = ReceiverModel.query.get(receiver_id)
-    if not r:
-        return jsonify({"error": "not found"}), 404
-    r.enabled = True
-    db.session.commit()
-    manager.start_receiver(Receiver(r))
-    return jsonify({"status": "enabled"})
+@app.route("/receivers/enable", methods=["POST"])
+def enable_receiver():
+    data = request.json or {}
+    res = enable_controller.handle(data)
+    if "error" in res:
+        return jsonify(res), 404
+    return jsonify(res)
 
-@app.route("/receivers/<int:receiver_id>/disable", methods=["POST"])
-def disable_receiver(receiver_id):
-    r = ReceiverModel.query.get(receiver_id)
-    if not r:
-        return jsonify({"error": "not found"}), 404
-    r.enabled = False
-    db.session.commit()
-    manager.stop_receiver(receiver_id)
-    return jsonify({"status": "disabled"})
+@app.route("/receivers/disable", methods=["POST"])
+def disable_receiver():
+    data = request.json or {}
+    res = disable_controller.handle(data)
+    if "error" in res:
+        return jsonify(res), 404
+    return jsonify(res)
 
-@app.route("/receivers/<int:receiver_id>/start", methods=["POST"])
-def start_receiver_manual(receiver_id):
-    r = ReceiverModel.query.get(receiver_id)
-    if not r:
-        return jsonify({"error": "not found"}), 404
+@app.route("/receivers/start", methods=["POST"])
+def start_receiver():
+    data = request.json or {}
+    res = start_controller.handle(data)
+    if "error" in res:
+        return jsonify(res), 404
+    return jsonify(res)
 
-    ok = manager.start_receiver(Receiver(r))
-    return jsonify({"started": ok})
-
-@app.route("/receivers/<int:receiver_id>/stop", methods=["POST"])
-def stop_receiver_manual(receiver_id):
-    ok = manager.stop_receiver(receiver_id)
-    return jsonify({"stopped": ok})
+@app.route("/receivers/stop", methods=["POST"])
+def stop_receiver():
+    data = request.json or {}
+    res = stop_controller.handle(data)
+    return jsonify(res)
 
 
 
@@ -117,5 +117,4 @@ def consumer_loop():
         else:
             time.sleep(1)
 
-# Inicializa thread do consumidor
 threading.Thread(target=consumer_loop, daemon=True).start()

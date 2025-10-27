@@ -1,19 +1,19 @@
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 
 @dataclass
 class ReceiverProps:
-    id: str | None
     url: str
     name: str
-    enabled: bool
-    is_running: bool
-    last_started_at: datetime | None
-    last_heartbeat: datetime | None
-    created_at: datetime
-    updated_at: datetime
+    id: str | None = None
+    enabled: bool | None = False
+    is_running: bool | None = True
+    last_started_at: datetime | None = field(default_factory=datetime.utcnow)
+    last_heartbeat: datetime | None = field(default_factory=datetime.utcnow)
+    created_at: datetime | None = field(default_factory=datetime.utcnow)
+    updated_at: datetime | None = field(default_factory=datetime.utcnow)
 
 
 class Receiver:
@@ -26,9 +26,9 @@ class Receiver:
         self.id = id
         self.url = props.url
         self.name = props.name
-        self.enabled = props.enabled
-        self.is_running = props.is_running
+        self.enabled = props.enabled or False
+        self.is_running = props.is_running or True
         self.last_started_at = props.last_started_at
         self.last_heartbeat = props.last_heartbeat
-        self.created_at = props.created_at
-        self.updated_at = props.updated_at
+        self.created_at = props.created_at or datetime.utcnow()
+        self.updated_at = props.updated_at or datetime.utcnow()

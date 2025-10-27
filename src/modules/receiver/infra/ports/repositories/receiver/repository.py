@@ -32,8 +32,18 @@ class ReceiverRepository(ReceiverRepositoryAbstract):
         r = ReceiverModel.query.get(receiver_id)
         return Receiver(r) if r else None
 
-    def create(self, name: str, url: str):
-        r = ReceiverModel(name=name, url=url, enabled=True)
+    def create(self, props: Receiver):
+        r = ReceiverModel(
+            id=props.id,
+            name=props.name,
+            url=props.url,
+            enabled=props.enabled,
+            is_running=props.is_running,
+            last_started_at=props.last_started_at,
+            last_heartbeat=props.last_heartbeat,
+            created_at=props.created_at,
+            updated_at=props.updated_at,
+        )
         db.session.add(r)
         db.session.commit()
         return Receiver(r)
