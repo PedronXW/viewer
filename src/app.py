@@ -1,8 +1,11 @@
+import threading
+import time
 import uuid
 
 from flask import Flask, jsonify, request
 
 from modules.receiver.domain.receiver import Receiver
+from modules.receiver.infra.ports.queues.client import queue_url, sqs
 from modules.receiver.infra.ports.repositories.database import db
 from modules.receiver.infra.ports.repositories.receiver.repository import (
     ReceiverModel, ReceiverRepository)
@@ -91,3 +94,28 @@ def start_receiver_manual(receiver_id):
 def stop_receiver_manual(receiver_id):
     ok = manager.stop_receiver(receiver_id)
     return jsonify({"stopped": ok})
+
+
+
+
+def consumer_loop():
+    print("[Consumer] Starting SQS consumer loop")
+    while True:
+        messages = sqs.receive_message(
+            QueueUrl=queue_url,
+            MaxNumberOfMessages=10,
+            WaitTimeSeconds=10
+        )
+        if "Messages" in messages:
+            for msg in messages["Messages"]:
+                print("Mensagem recebida:", msg["Body"])
+                # Processa mensagem...
+                sqs.delete_message(
+                    QueueUrl=queue_url,
+                    ReceiptHandle=msg["ReceiptHandle"]
+                )
+        else:
+            time.sleep(1)
+
+# Inicializa thread do consumidor
+threading.Thread(target=consumer_loop, daemon=True).start()

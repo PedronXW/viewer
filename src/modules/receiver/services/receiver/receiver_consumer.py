@@ -11,6 +11,8 @@ from yolox.tracker.byte_tracker import BYTETracker
 
 import config as config
 from modules.receiver.domain.frame import FrameProps
+from modules.receiver.infra.ports.queues.client import queue_url, sqs
+from modules.receiver.infra.ports.queues.SQSQueue import SQSQueueRepository
 from modules.receiver.infra.ports.repositories.frame.repository import \
     FrameRepository
 from modules.receiver.infra.ports.storage.S3Storage import S3Storage
@@ -73,19 +75,24 @@ class ReceiverConsumer(threading.Thread):
                 # stream lost — wait and let the watcher handle stale locks
                 time.sleep(1)
                 continue
-            print(f"[Consumer] Receiver {self.receiver.id} got frame {frame_idx}")
 
             frame_repository = FrameRepository()
             storage_repository = S3Storage()
             create_frame_service = CreateFrameService(frame_repository=frame_repository, storage_repository=storage_repository)
+            queue_repository = SQSQueueRepository(sqs_client=sqs, queue_url=queue_url)
             
-            print(f"[Consumer] Processing frame {frame_idx} for receiver {self.receiver.id}")
 
-            await create_frame_service.execute(props=FrameProps(
+            frame = await create_frame_service.execute(props=FrameProps(
                 id=None,
                 receiver_id=str(self.receiver.id),
                 timestamp=datetime.utcnow()
             ), frame_data=frame)
+            
+            await queue_repository.publish({
+                "receiver_id": str(self.receiver.id),
+                "timestamp": str(datetime.utcnow().isoformat()),
+                "frame_id": frame.id
+            })
             
             
             now = time.time()

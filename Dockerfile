@@ -32,6 +32,8 @@ COPY . /app
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
+ENV PYTHONPATH=/app/src
+
 # Define PATH para usar a venv por padrão
 ENV PATH="/venv/bin:$PATH"
 
