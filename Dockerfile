@@ -2,19 +2,28 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Instala dependências do sistema
+# Instala dependências do sistema necessárias para compilar o ByteTrack e rodar OpenCV
 RUN apt-get update && apt-get install -y \
+    git \
     build-essential \
     bash \
-    libgl1 libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/* 
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxrender1 \
+    libxext6 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copia apenas o requirements para cache de build
+# Copia o requirements primeiro (para aproveitar cache)
 COPY requirements.txt /app/requirements.txt
 
-# Cria a venv e instala as dependências
+# Cria a venv e instala o PyTorch antes do restante
 RUN python -m venv /venv \
-    && /bin/bash -c "source /venv/bin/activate && pip install --upgrade pip && pip install -r /app/requirements.txt"
+    && /bin/bash -c "source /venv/bin/activate && pip install --upgrade pip \
+    && pip install --no-cache-dir torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir loguru cython pycocotools opencv-python \
+    && pip install --no-cache-dir --no-build-isolation -r /app/requirements.txt \
+    && pip install --no-cache-dir --no-build-isolation git+https://github.com/ifzhang/ByteTrack.git"
 
 # Copia o restante do código
 COPY . /app
@@ -23,7 +32,7 @@ COPY . /app
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
-# Define PATH para que binários da venv fiquem disponíveis
+# Define PATH para usar a venv por padrão
 ENV PATH="/venv/bin:$PATH"
 
 # Comando padrão
