@@ -102,10 +102,12 @@ class ReceiverConsumer(threading.Thread):
                 x1, y1, x2, y2 = map(int, track.tlbr)
                 unique_id = f"{int(self.created_at.timestamp() * 1000)}_{track.start_frame}_{track.track_id}"
                 track_repository = TrackRepository()
-                create_track_service = CreateTrackService(track_repository=track_repository)
-                track = await create_track_service.execute(props=TrackProps(
-                        track_id=unique_id
-                ))
+                track = await track_repository.get(track_id=unique_id)
+                if not track:
+                    create_track_service = CreateTrackService(track_repository=track_repository)
+                    track = create_track_service.execute(props=TrackProps(
+                            track_id=unique_id
+                    ))
                 
                 h, w = frame.shape[:2]
                 x1 = max(0, min(x1, w - 1))

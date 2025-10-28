@@ -8,8 +8,9 @@ class CreateTrackService:
     def __init__(self, track_repository: TrackRepositoryAbstract):
         self.track_repository = track_repository
 
-    async def execute(self, props: TrackProps) -> Track:
+    def execute(self, props: TrackProps) -> Track:
         track = Track(props)
-        await self.track_repository.add(track)
+        print(f"[CreateTrackService] Creating track {track.id} {track.track_id}")
+        self.track_repository.add(track)
         return track
         

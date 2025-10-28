@@ -7,3 +7,7 @@ class TrackRepositoryAbstract(ABC):
     @abstractmethod
     async def add(self, Track: Track) -> None:
         pass
+    
+    @abstractmethod
+    async def get(self, track_id: str) -> Track | None:
+        pass
