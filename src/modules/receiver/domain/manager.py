@@ -38,6 +38,7 @@ class ReceiverManager:
             return True
 
     def stop_receiver(self, receiver_id):
+        print(f"[Manager] stopping receiver {receiver_id}")
         with self.lock:
             consumer = self.consumers.pop(receiver_id, None)
             if consumer:

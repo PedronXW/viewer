@@ -8,6 +8,7 @@ from dataclasses import dataclass
 @dataclass
 class FrameProps:
     id: str | None
+    track_id: str | None
     receiver_id: str
     timestamp: datetime
     
@@ -18,6 +19,8 @@ class Frame:
             id = props.id
         else:
             id = str(uuid.uuid4())
-        self.id = id
+        self.track_id = props.track_id
         self.receiver_id = props.receiver_id
         self.timestamp = props.timestamp
+        self.id = id
+        

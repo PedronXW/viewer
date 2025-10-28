@@ -1,8 +1,9 @@
 import threading
-import time
 
 from flask import Flask, jsonify, request
 
+from modules.analyzer.infra.adapters.queue.new_frame import \
+    NewFrameQueueReceiver
 from modules.receiver.domain.manager import ReceiverManager
 from modules.receiver.infra.adapters.http.receiver.create import \
     CreateReceiverController
@@ -16,7 +17,6 @@ from modules.receiver.infra.adapters.http.receiver.start import \
     StartReceiverController
 from modules.receiver.infra.adapters.http.receiver.stop import \
     StopReceiverController
-from modules.receiver.infra.ports.queues.client import queue_url, sqs
 from modules.receiver.infra.ports.repositories.database import db
 from modules.receiver.infra.ports.repositories.receiver.repository import \
     ReceiverRepository
@@ -81,40 +81,19 @@ def disable_receiver():
         return jsonify(res), 404
     return jsonify(res)
 
-@app.route("/receivers/start", methods=["POST"])
-def start_receiver():
-    data = request.json or {}
-    res = start_controller.handle(data)
+@app.route("/receivers/<receiver_id>/start", methods=["POST"])
+def start_receiver(receiver_id):
+    res = start_controller.handle({"receiver_id": receiver_id})
     if "error" in res:
         return jsonify(res), 404
     return jsonify(res)
 
-@app.route("/receivers/stop", methods=["POST"])
-def stop_receiver():
-    data = request.json or {}
-    res = stop_controller.handle(data)
+@app.route("/receivers/<receiver_id>/stop", methods=["POST"])
+def stop_receiver(receiver_id):
+    res = stop_controller.handle({"receiver_id": receiver_id})
     return jsonify(res)
 
 
+new_frame_receiver = NewFrameQueueReceiver()
 
-
-def consumer_loop():
-    print("[Consumer] Starting SQS consumer loop")
-    while True:
-        messages = sqs.receive_message(
-            QueueUrl=queue_url,
-            MaxNumberOfMessages=10,
-            WaitTimeSeconds=10
-        )
-        if "Messages" in messages:
-            for msg in messages["Messages"]:
-                print("Mensagem recebida:", msg["Body"])
-                # Processa mensagem...
-                sqs.delete_message(
-                    QueueUrl=queue_url,
-                    ReceiptHandle=msg["ReceiptHandle"]
-                )
-        else:
-            time.sleep(1)
-
-threading.Thread(target=consumer_loop, daemon=True).start()
+threading.Thread(target=new_frame_receiver.receive, daemon=True).start()

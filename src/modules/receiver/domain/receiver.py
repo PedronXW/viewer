@@ -8,8 +8,8 @@ class ReceiverProps:
     url: str
     name: str
     id: str | None = None
-    enabled: bool | None = False
-    is_running: bool | None = True
+    enabled: bool | None = True
+    is_running: bool | None = False
     last_started_at: datetime | None = field(default_factory=datetime.utcnow)
     last_heartbeat: datetime | None = field(default_factory=datetime.utcnow)
     created_at: datetime | None = field(default_factory=datetime.utcnow)

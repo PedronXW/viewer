@@ -1,6 +1,6 @@
-YOLO_MODEL_PATH = 'yolov8n.pt'
-REAL_ESRGAN_MODEL_PATH = 'models/realesrgan_x4plus.pth'
-DEEPSORT_MODEL_PATH = 'models/deep_sort.pb'
+YOLO_MODEL_PATH = './src/datasets/models/yolov8s.pt'
+REAL_ESRGAN_MODEL_PATH = './src/datasets/models/realesrgan_x4plus.pth'
+DEEPSORT_MODEL_PATH = './src/datasets/models/deep_sort.pb'
 
 USE_SUPERRES = True
 USE_TRACKING = True
