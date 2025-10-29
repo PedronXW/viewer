@@ -2,7 +2,7 @@ import threading
 
 from flask import Flask, jsonify, request
 
-from modules.analyzer.infra.adapters.queue.new_frame import \
+from modules.analysis.infra.adapters.queue.new_frame import \
     NewFrameQueueReceiver
 from modules.receiver.domain.manager import ReceiverManager
 from modules.receiver.infra.adapters.http.receiver.create import \

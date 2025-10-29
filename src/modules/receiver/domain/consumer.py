@@ -7,6 +7,7 @@ from datetime import datetime
 
 import cv2
 import numpy as np
+from ultralytics import YOLO
 from yolox.tracker.byte_tracker import BYTETracker
 
 import config as config
@@ -21,10 +22,6 @@ from modules.receiver.infra.ports.repositories.track.repository import \
 from modules.receiver.infra.ports.storage.S3Storage import S3Storage
 from modules.receiver.services.frame.create import CreateFrameService
 from modules.receiver.services.track.create import CreateTrackService
-from utils.detector import Detector
-from utils.ocr import read_plate
-from utils.postprocess import correct_ocr
-from utils.stream_handler import get_video_stream
 
 
 class TrackerArgs:
@@ -62,8 +59,8 @@ class ReceiverConsumer(threading.Thread):
 
     async def _run_async(self):
         print(f"[Consumer] Starting receiver {self.receiver.id} -> {self.receiver.url}")
-        detector = Detector(config.YOLO_MODEL_PATH)
-        cap = get_video_stream(self.receiver.url)
+        detector = YOLO(config.YOLO_MODEL_PATH)
+        cap = cv2.VideoCapture(self.receiver.url)
 
         if not cap.isOpened():
             print(f"[Consumer] Failed to open {self.receiver.id}")
@@ -80,8 +77,9 @@ class ReceiverConsumer(threading.Thread):
                 # stream lost — wait and let the watcher handle stale locks
                 time.sleep(1)
                 continue
-            
-            results = detector.detect(frame)
+
+            detector_result = detector(frame)
+            results = detector_result[0]
             detections, scores = [], []
 
             
@@ -133,7 +131,8 @@ class ReceiverConsumer(threading.Thread):
                     await queue_repository.publish({
                         "receiver_id": str(self.receiver.id),
                         "timestamp": str(datetime.utcnow().isoformat()),
-                        "frame_id": domain_frame.id
+                        "frame_id": domain_frame.id,
+                        "track_id": str(track.id)
                     })
             
             
