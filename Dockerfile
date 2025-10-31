@@ -20,7 +20,7 @@ COPY requirements.txt /app/requirements.txt
 # Cria a venv e instala o PyTorch antes do restante
 RUN python -m venv /venv \
     && /bin/bash -c "source /venv/bin/activate && pip install --upgrade pip \
-    && pip install --no-cache-dir torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 torchreid==0.2.5 --index-url https://download.pytorch.org/whl/cpu \
     && pip install --no-cache-dir loguru cython pycocotools opencv-python \
     && pip install --no-cache-dir --no-build-isolation -r /app/requirements.txt \
     && pip install --no-cache-dir --no-build-isolation git+https://github.com/ifzhang/ByteTrack.git"
